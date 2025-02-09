@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Tenants{% endblock %}
+
+{% block content %}
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>Tenants</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard')}}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Tenants</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section dashboard">
+    <div class="row">
+
+      {% for tenant in active_tenants.items %}
+      <div class="col-lg-4"> 
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">
+              <img src="{{ url_for('static', filename='uploads/profile/' + (tenant.tenant.user.profile_picture or 'default.png')) }}" 
+                   alt="{{ tenant.tenant.user.firstname }} {{ tenant.tenant.user.lastname }}" 
+                   class="rounded-circle" 
+                   style="width: 50px; height: 50px; object-fit: cover;"> 
+              {{ tenant.tenant.user.name }} {{ tenant.tenant.user.lastname }}
+            </h5>
+            <p class="card-text">
+              <b>Agreement:</b> <a href="{{ url_for('rental_routes.view_rental_agreement_pdf', agreement_id=tenant.id) }}">View Agreement</a><br>
+              <b>Lease Life:</b> {{ tenant.lease_life_percent }}%
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+    </div>
+  </section>
+
+</main>
+{% endblock %}
