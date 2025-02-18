@@ -1,5 +1,5 @@
-# Use Azure's Python image
-FROM mcr.microsoft.com/appsvc/python:3.11
+# Use official Python image
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot
+RUN mkdir -p /home/site/wwwroot /app
 
 WORKDIR /home/site/wwwroot
 
@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Create startup script in the location Azure expects
+# Create startup script in both locations Azure might look
 RUN echo '#!/bin/sh\n\
 cd /home/site/wwwroot\n\
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
@@ -52,12 +52,14 @@ exec gunicorn --bind=0.0.0.0:8000 \\\n\
     --access-logfile - \\\n\
     --error-logfile - \\\n\
     --log-level info \\\n\
-    app:app' > /opt/startup/startup.sh && \
-    chmod +x /opt/startup/startup.sh
+    app:app' > /app/startup.sh && \
+    chmod +x /app/startup.sh && \
+    cp /app/startup.sh /opt/startup/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
     chown -R myuser:myuser /home/site/wwwroot && \
+    chown -R myuser:myuser /app && \
     chown -R myuser:myuser /opt/startup
 USER myuser
 
