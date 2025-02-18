@@ -53,5 +53,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Let Azure App Service handle startup
+# Set the startup command explicitly
+CMD ["gunicorn", "--bind=0.0.0.0:8000", "--timeout", "120", "--workers", "2", "--threads", "2", "--access-logfile", "-", "--error-logfile", "-", "--log-level", "info", "app:app"]
 
