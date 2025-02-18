@@ -46,9 +46,8 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 COPY . .
 
 # Make startup script executable and copy to both locations
-COPY startup.sh /opt/startup/startup.sh
-COPY startup.sh /app/startup.sh
-RUN chmod +x /opt/startup/startup.sh /app/startup.sh
+COPY startup.sh /app/
+RUN chmod +x /app/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
@@ -63,5 +62,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Let Azure App Service use its default entrypoint
+# Set the command explicitly
+CMD ["/app/startup.sh"]
 
