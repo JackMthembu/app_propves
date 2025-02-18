@@ -28,13 +28,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /tmp/8dd49cc763c5b00/uploads/temp \
-    /tmp/8dd49cc763c5b00/uploads/profile \
-    /tmp/8dd49cc763c5b00/uploads/property \
-    /tmp/8dd49cc763c5b00/uploads/documents \
+RUN mkdir -p /home/site/wwwroot/uploads/temp \
+    /home/site/wwwroot/uploads/profile \
+    /home/site/wwwroot/uploads/property \
+    /home/site/wwwroot/uploads/documents \
     /app
 
-WORKDIR /tmp/8dd49cc763c5b00
+WORKDIR /home/site/wwwroot
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
@@ -45,13 +45,13 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Make startup script executable and copy to both locations
-COPY startup.sh /app/
+# Make startup script executable and copy to Azure's expected location
+COPY startup.sh /app/startup.sh
 RUN chmod +x /app/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
-    chown -R myuser:myuser /tmp/8dd49cc763c5b00 && \
+    chown -R myuser:myuser /home/site/wwwroot && \
     chown -R myuser:myuser /app
 USER myuser
 
@@ -62,6 +62,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the command explicitly
-CMD ["/app/startup.sh"]
+# Let Azure App Service use its default entrypoint
 
