@@ -1,5 +1,5 @@
-# Use official Python image
-FROM python:3.11-slim
+# Use Azure's Python image
+FROM mcr.microsoft.com/appsvc/python:3.11
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot /app
+RUN mkdir -p /home/site/wwwroot
 
 WORKDIR /home/site/wwwroot
 
@@ -52,13 +52,13 @@ exec gunicorn --bind=0.0.0.0:8000 \\\n\
     --access-logfile - \\\n\
     --error-logfile - \\\n\
     --log-level info \\\n\
-    app:app' > /app/startup.sh && \
-    chmod +x /app/startup.sh
+    app:app' > /opt/startup/startup.sh && \
+    chmod +x /opt/startup/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
     chown -R myuser:myuser /home/site/wwwroot && \
-    chown -R myuser:myuser /app
+    chown -R myuser:myuser /opt/startup
 USER myuser
 
 # Expose port
