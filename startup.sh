@@ -4,14 +4,14 @@ set -e
 echo "Starting application setup..."
 
 # Set working directory
-cd /app
+cd /home/site/wwwroot
 
 # Create required directories if they don't exist
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents
 
 # Set environment variables
 export FLASK_APP=app.py
-export PYTHONPATH=/app
+export PYTHONPATH=/home/site/wwwroot
 
 echo "Installing/Upgrading pip..."
 python -m pip install --upgrade pip
