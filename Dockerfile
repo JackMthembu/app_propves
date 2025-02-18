@@ -1,5 +1,5 @@
-# Use official Python image
-FROM python:3.11-slim
+# Use Azure's Python image
+FROM mcr.microsoft.com/appsvc/python:3.11
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,11 +28,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot/uploads/temp \
-    /home/site/wwwroot/uploads/profile \
-    /home/site/wwwroot/uploads/property \
-    /home/site/wwwroot/uploads/documents \
-    /app
+RUN mkdir -p /home/site/wwwroot
 
 WORKDIR /home/site/wwwroot
 
@@ -45,14 +41,9 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Make startup script executable and copy to Azure's expected location
-COPY startup.sh /app/startup.sh
-RUN chmod +x /app/startup.sh
-
 # Create non-root user
 RUN useradd -m myuser && \
-    chown -R myuser:myuser /home/site/wwwroot && \
-    chown -R myuser:myuser /app
+    chown -R myuser:myuser /home/site/wwwroot
 USER myuser
 
 # Expose port
@@ -62,5 +53,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Let Azure App Service use its default entrypoint
+# Let Azure App Service handle startup
 
