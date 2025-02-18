@@ -3,15 +3,14 @@ set -e
 
 echo "Starting application setup..."
 
-# Set working directory
-cd /home/site/wwwroot
+cd /tmp/8dd49cc763c5b00
 
 # Create required directories if they don't exist
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents
 
 # Set environment variables
 export FLASK_APP=app.py
-export PYTHONPATH=/home/site/wwwroot
+export PYTHONPATH=/tmp/8dd49cc763c5b00
 
 echo "Starting Gunicorn server..."
 exec gunicorn --bind=0.0.0.0:8000 \

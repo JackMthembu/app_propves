@@ -1,5 +1,5 @@
-# Use Azure's Python image
-FROM mcr.microsoft.com/appsvc/python:3.11_20241021.7
+# Use Azure's Python image with correct tag
+FROM mcr.microsoft.com/appsvc/python:3.11
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -28,12 +28,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot/uploads/temp \
-    /home/site/wwwroot/uploads/profile \
-    /home/site/wwwroot/uploads/property \
-    /home/site/wwwroot/uploads/documents
+RUN mkdir -p /tmp/8dd49cc763c5b00/uploads/temp \
+    /tmp/8dd49cc763c5b00/uploads/profile \
+    /tmp/8dd49cc763c5b00/uploads/property \
+    /tmp/8dd49cc763c5b00/uploads/documents
 
-WORKDIR /home/site/wwwroot
+WORKDIR /tmp/8dd49cc763c5b00
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
@@ -49,7 +49,7 @@ COPY startup.sh /opt/startup/startup.sh
 RUN chmod +x /opt/startup/startup.sh
 
 # Create non-root user
-RUN useradd -m myuser && chown -R myuser:myuser /home/site/wwwroot
+RUN useradd -m myuser && chown -R myuser:myuser /tmp/8dd49cc763c5b00
 USER myuser
 
 # Expose port
@@ -60,5 +60,5 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
 # Set the startup command explicitly
-CMD ["/opt/startup/startup.sh"]
+ENTRYPOINT ["/opt/startup/startup.sh"]
 
