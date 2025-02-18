@@ -1,5 +1,5 @@
-# Use Azure's Python image with correct tag
-FROM mcr.microsoft.com/appsvc/python:3.11
+# Use official Python image
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -39,7 +39,7 @@ WORKDIR /tmp/8dd49cc763c5b00
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy project
 COPY . .
