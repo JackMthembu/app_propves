@@ -6,10 +6,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000 \
     WEBSITE_HOSTNAME=localhost \
-    FLASK_APP=app.py
+    FLASK_APP=app.py \
+    PATH="/home/site/wwwroot:${PATH}"
 
 # Set work directory
-WORKDIR /app
+WORKDIR /home/site/wwwroot
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -31,10 +32,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /app/uploads/temp \
-    /app/uploads/profile \
-    /app/uploads/property \
-    /app/uploads/documents
+RUN mkdir -p /home/site/wwwroot/uploads/temp \
+    /home/site/wwwroot/uploads/profile \
+    /home/site/wwwroot/uploads/property \
+    /home/site/wwwroot/uploads/documents
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
@@ -47,11 +48,11 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY . .
 
 # Make startup script executable
-COPY startup.sh .
-RUN chmod +x startup.sh
+COPY startup.sh /home/site/wwwroot/
+RUN chmod +x /home/site/wwwroot/startup.sh
 
 # Create non-root user
-RUN useradd -m myuser && chown -R myuser:myuser /app
+RUN useradd -m myuser && chown -R myuser:myuser /home/site/wwwroot
 USER myuser
 
 # Expose port
@@ -61,6 +62,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run startup script
-CMD ["./startup.sh"]
+# Set the startup command explicitly
+CMD ["/home/site/wwwroot/startup.sh"]
 
