@@ -31,7 +31,8 @@ RUN apt-get update && apt-get install -y \
 RUN mkdir -p /tmp/8dd49cc763c5b00/uploads/temp \
     /tmp/8dd49cc763c5b00/uploads/profile \
     /tmp/8dd49cc763c5b00/uploads/property \
-    /tmp/8dd49cc763c5b00/uploads/documents
+    /tmp/8dd49cc763c5b00/uploads/documents \
+    /app
 
 WORKDIR /tmp/8dd49cc763c5b00
 
@@ -44,12 +45,15 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Make startup script executable
+# Make startup script executable and copy to both locations
 COPY startup.sh /opt/startup/startup.sh
-RUN chmod +x /opt/startup/startup.sh
+COPY startup.sh /app/startup.sh
+RUN chmod +x /opt/startup/startup.sh /app/startup.sh
 
 # Create non-root user
-RUN useradd -m myuser && chown -R myuser:myuser /tmp/8dd49cc763c5b00
+RUN useradd -m myuser && \
+    chown -R myuser:myuser /tmp/8dd49cc763c5b00 && \
+    chown -R myuser:myuser /app
 USER myuser
 
 # Expose port
@@ -59,6 +63,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the startup command explicitly
-ENTRYPOINT ["/opt/startup/startup.sh"]
+# Let Azure App Service use its default entrypoint
 
