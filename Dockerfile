@@ -28,7 +28,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot /app
+RUN mkdir -p /home/site/wwwroot /app /opt/startup
 
 WORKDIR /home/site/wwwroot
 
@@ -41,9 +41,10 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Create startup script
+# Create startup script that Oryx expects
 RUN echo '#!/bin/sh\n\
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
+cd /home/site/wwwroot\n\
 exec gunicorn --bind=0.0.0.0:8000 \
     --timeout 120 \
     --workers 2 \
@@ -51,13 +52,14 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
-    app:app' > startup.sh && \
-    chmod +x startup.sh
+    app:app' > /opt/startup/startup.sh && \
+    chmod +x /opt/startup/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
     chown -R myuser:myuser /app && \
-    chown -R myuser:myuser /home/site/wwwroot
+    chown -R myuser:myuser /home/site/wwwroot && \
+    chown -R myuser:myuser /opt/startup
 USER myuser
 
 # Expose port
@@ -67,6 +69,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the startup command
-CMD ["/home/site/wwwroot/startup.sh"]
+# Set the startup command to use Oryx's expected script
+CMD ["/opt/startup/startup.sh"]
 
