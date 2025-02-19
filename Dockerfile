@@ -41,10 +41,11 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Create startup scripts
+# Create startup script
 RUN echo '#!/bin/sh\n\
-mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
-cd /home/site/wwwroot\n\
+APP_PATH=${APP_PATH:-/home/site/wwwroot}\n\
+mkdir -p $APP_PATH/uploads/temp $APP_PATH/uploads/profile $APP_PATH/uploads/property $APP_PATH/uploads/documents\n\
+cd $APP_PATH\n\
 exec gunicorn --bind=0.0.0.0:8000 \
     --timeout 120 \
     --workers 2 \
