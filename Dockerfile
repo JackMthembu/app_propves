@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
 # Create necessary directories
 RUN mkdir -p /home/site/wwwroot /app
 
-WORKDIR /app
+WORKDIR /home/site/wwwroot
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
@@ -51,8 +51,8 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
-    app:app' > /app/startup.sh && \
-    chmod +x /app/startup.sh
+    app:app' > startup.sh && \
+    chmod +x startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
@@ -67,6 +67,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the startup command to use Azure's expected script
-CMD ["/app/startup.sh"]
+# Set the startup command
+CMD ["/home/site/wwwroot/startup.sh"]
 
