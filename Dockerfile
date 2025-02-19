@@ -41,7 +41,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Create startup script that Oryx expects
+# Create startup scripts
 RUN echo '#!/bin/sh\n\
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
 cd /home/site/wwwroot\n\
@@ -52,7 +52,9 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
-    app:app' > /opt/startup/startup.sh && \
+    app:app' > startup.sh && \
+    chmod +x startup.sh && \
+    cp startup.sh /opt/startup/startup.sh && \
     chmod +x /opt/startup/startup.sh
 
 # Create non-root user
@@ -69,6 +71,6 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Set the startup command to use Oryx's expected script
-CMD ["/opt/startup/startup.sh"]
+# Set the startup command
+CMD ["/home/site/wwwroot/startup.sh"]
 
