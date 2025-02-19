@@ -55,10 +55,10 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --log-level info \
     app:app' > startup.sh && \
     chmod +x startup.sh && \
-    cp startup.sh /opt/startup/startup.sh && \
-    chmod +x /opt/startup/startup.sh
+    mv startup.sh /opt/startup/startup.sh && \
+    ln -sf /opt/startup/startup.sh /home/site/wwwroot/startup.sh
 
-# Create non-root user
+# Create non-root user and set permissions
 RUN useradd -m myuser && \
     chown -R myuser:myuser /app && \
     chown -R myuser:myuser /home/site/wwwroot && \
