@@ -28,9 +28,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories
-RUN mkdir -p /home/site/wwwroot /app /opt/startup
+RUN mkdir -p /home/site/wwwroot /app
 
-WORKDIR /home/site/wwwroot
+WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
@@ -41,25 +41,23 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 # Copy project
 COPY . .
 
-# Create startup script in the location Azure expects
+# Create startup script
 RUN echo '#!/bin/sh\n\
-cd /home/site/wwwroot\n\
 mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
-exec gunicorn --bind=0.0.0.0:8000 \\\n\
-    --timeout 120 \\\n\
-    --workers 2 \\\n\
-    --threads 2 \\\n\
-    --access-logfile - \\\n\
-    --error-logfile - \\\n\
-    --log-level info \\\n\
+exec gunicorn --bind=0.0.0.0:8000 \
+    --timeout 120 \
+    --workers 2 \
+    --threads 2 \
+    --access-logfile - \
+    --error-logfile - \
+    --log-level info \
     app:app' > /app/startup.sh && \
     chmod +x /app/startup.sh
 
 # Create non-root user
 RUN useradd -m myuser && \
-    chown -R myuser:myuser /home/site/wwwroot && \
     chown -R myuser:myuser /app && \
-    chown -R myuser:myuser /opt/startup
+    chown -R myuser:myuser /home/site/wwwroot
 USER myuser
 
 # Expose port
