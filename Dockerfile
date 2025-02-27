@@ -25,7 +25,15 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
     shared-mime-info \
+    fonts-liberation \
+    libpangoft2-1.0-0 \
+    libjpeg-dev \
+    libopenjp2-7-dev \
     && rm -rf /var/lib/apt/lists/*
+
+# Create fonts config directory
+RUN mkdir -p /usr/share/fonts/truetype/custom && \
+    fc-cache -f -v
 
 # Create necessary directories
 RUN mkdir -p /home/site/wwwroot /app /opt/startup
