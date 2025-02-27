@@ -29,11 +29,20 @@ RUN apt-get update && apt-get install -y \
     libpangoft2-1.0-0 \
     libjpeg-dev \
     libopenjp2-7-dev \
+    python3-cffi \
+    python3-brotli \
+    libpango1.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create fonts config directory
+# Create fonts config directory and set permissions
 RUN mkdir -p /usr/share/fonts/truetype/custom && \
-    fc-cache -f -v
+    fc-cache -f -v && \
+    mkdir -p /var/cache/fontconfig && \
+    chmod 777 /var/cache/fontconfig
+
+# Set environment variables for WeasyPrint
+ENV FONTCONFIG_PATH=/etc/fonts \
+    WEASYPRINT_CACHE_DIR=/var/cache/fontconfig
 
 # Create necessary directories
 RUN mkdir -p /home/site/wwwroot /app /opt/startup
