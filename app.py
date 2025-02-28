@@ -290,20 +290,22 @@ def create_app():
             g.session.close()
 
     @app.route('/health', methods=['GET'])
+    def health_check():
+        return "Healthy", 200
+
+    @app.route('/health')
     def health():
         try:
             # Test WeasyPrint configuration
             font_config = FontConfiguration()
             return jsonify({
                 "status": "healthy",
-                "message": "WeasyPrint configuration successful",
-                "timestamp": datetime.now().isoformat()
+                "message": "WeasyPrint configuration successful"
             }), 200
         except Exception as e:
             return jsonify({
                 "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.now().isoformat()
+                "error": str(e)
             }), 500
 
     return app 

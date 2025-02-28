@@ -1,4 +1,4 @@
-# Use official Python image
+# Use the official Python image from the Docker Hub
 FROM python:3.11-slim
 
 # Set environment variables
@@ -8,13 +8,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     WEBSITE_HOSTNAME=localhost \
     FLASK_APP=app.py
 
-# Install system dependencies
+# Set the working directory
+WORKDIR /app
+
+# Install system dependencies for WeasyPrint
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3-dev \
-    libpq-dev \
-    gcc \
-    curl \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-dev \
+    libcairo2-dev \
+    libgirepository1.0-dev \
+    libglib2.0-dev \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Install WeasyPrint dependencies
@@ -29,33 +33,24 @@ RUN apt-get update && apt-get install -y \
     libpangoft2-1.0-0 \
     libjpeg-dev \
     libopenjp2-7-dev \
-    python3-cffi \
-    python3-brotli \
-    libpango1.0-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create fonts config directory and set permissions
+# Create fonts config directory
 RUN mkdir -p /usr/share/fonts/truetype/custom && \
-    fc-cache -f -v && \
-    mkdir -p /var/cache/fontconfig && \
-    chmod 777 /var/cache/fontconfig
-
-# Set environment variables for WeasyPrint
-ENV FONTCONFIG_PATH=/etc/fonts \
-    WEASYPRINT_CACHE_DIR=/var/cache/fontconfig
+    fc-cache -f -v
 
 # Create necessary directories
 RUN mkdir -p /home/site/wwwroot /app /opt/startup
 
 WORKDIR /home/site/wwwroot
 
-# Copy requirements first to leverage Docker cache
+# Copy the requirements file
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy the rest of your application code
 COPY . .
 
 # Create startup script
@@ -82,13 +77,8 @@ RUN useradd -m myuser && \
     chown -R myuser:myuser /opt/startup
 USER myuser
 
-# Expose port
+# Expose the port your app runs on
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Set the startup command
-CMD ["/home/site/wwwroot/startup.sh"]
-
+# Command to run your application using JSON array format
+CMD ["gunicorn", "--bind=0.0.0.0:8000", "app:app"]
