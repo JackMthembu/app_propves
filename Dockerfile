@@ -161,5 +161,5 @@ exec gunicorn --bind=0.0.0.0:8000 \\\n\
 USER myuser
 
 EXPOSE 8000
-
-CMD ["/opt/startup/startup.sh"]
+# Command to run the application
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
