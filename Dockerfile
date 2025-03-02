@@ -11,6 +11,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
@@ -24,6 +26,9 @@ RUN apt-get update && apt-get install -y \
     python3-cffi \
     python3-brotli \
     fonts-liberation \
+    libgirepository1.0-dev \
+    pkg-config \
+    gir1.2-pango-1.0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,7 +54,9 @@ RUN echo '#!/bin/sh\n\
 APP_PATH=${APP_PATH:-/home/site/wwwroot}\n\
 mkdir -p $APP_PATH/uploads/temp $APP_PATH/uploads/profile $APP_PATH/uploads/property $APP_PATH/uploads/documents\n\
 cd $APP_PATH\n\
-python3 -c "from weasyprint import HTML; HTML(string=\"<h1>Test</h1>\").write_pdf(\"/tmp/test.pdf\")" && \
+echo "Testing WeasyPrint installation..."\n\
+python3 -c "import sys; from weasyprint import HTML; print(\"Python version:\", sys.version); print(\"WeasyPrint dependencies:\", HTML.__file__); HTML(string=\"<h1>Test</h1>\").write_pdf(\"/tmp/test.pdf\")" || { echo "WeasyPrint test failed"; cat /tmp/weasyprint-error.log 2>/dev/null; exit 1; }\n\
+echo "WeasyPrint test successful"\n\
 exec gunicorn --bind=0.0.0.0:8000 \
     --timeout 600 \
     --workers 1 \
