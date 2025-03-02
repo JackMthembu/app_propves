@@ -1,4 +1,4 @@
-# Use official Python image
+# Use the official Python image
 FROM python:3.11-slim
 
 # Set environment variables
@@ -9,17 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     FLASK_APP=app.py \
     DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install system dependencies for WeasyPrint
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
     libcairo2 \
-    libpango-1.0-0 \
-    libpangocairo-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    shared-mime-info \
     libpango1.0-dev \
-    libcairo2-dev \
+    libgdk-pixbuf2.0-dev \
+    shared-mime-info \
     libffi-dev \
     libjpeg-dev \
     libopenjp2-7-dev \
@@ -29,10 +26,7 @@ RUN apt-get update && apt-get install -y \
     libgirepository1.0-dev \
     pkg-config \
     gir1.2-pango-1.0 \
-    libglib2.0-0 \
     libglib2.0-dev \
-    libgirepository-1.0-1 \
-    gir1.2-gobject-2.0 \
     gobject-introspection \
     python3-gi \
     python3-gi-cairo \
@@ -54,9 +48,17 @@ RUN fc-cache -f -v
 
 WORKDIR /home/site/wwwroot
 
-# Copy requirements and install Python packages
+# Copy the requirements file
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+
+# Upgrade pip and setuptools
+RUN pip install --upgrade pip setuptools
+
+# Uninstall pycparser if it exists
+RUN pip uninstall -y pycparser || true
+
+# Install required packages
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
