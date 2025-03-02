@@ -33,6 +33,9 @@ RUN apt-get update && apt-get install -y \
     libglib2.0-dev \
     libgirepository-1.0-1 \
     gir1.2-gobject-2.0 \
+    gobject-introspection \
+    python3-gi \
+    python3-gi-cairo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -43,7 +46,8 @@ RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
 
 # Set library path for GObject
 ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:$LD_LIBRARY_PATH \
-    GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0
+    GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0:/usr/lib/girepository-1.0 \
+    PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH
 
 # Update font cache
 RUN fc-cache -f -v
