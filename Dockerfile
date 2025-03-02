@@ -8,10 +8,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     WEBSITE_HOSTNAME=localhost \
     FLASK_APP=app.py \
     DEBIAN_FRONTEND=noninteractive \
-    PYTHONPATH=/usr/lib/python3/dist-packages:$PYTHONPATH \
+    # Python and GObject paths
+    PYTHONPATH=/opt/venv/lib/python3.11/site-packages:/usr/lib/python3/dist-packages:$PYTHONPATH \
     LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:$LD_LIBRARY_PATH \
-    GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0 \
-    XDG_DATA_DIRS=/usr/share:/usr/local/share:/usr/share/gnome:/usr/local/share/gnome
+    GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0:/usr/local/lib/girepository-1.0 \
+    XDG_DATA_DIRS=/usr/share:/usr/local/share:/usr/share/gnome:/usr/local/share/gnome \
+    # Additional GObject environment variables
+    GI_SCANNER_DISABLE_CACHE=1 \
+    GSETTINGS_SCHEMA_DIR=/usr/share/glib-2.0/schemas
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -132,3 +136,13 @@ USER myuser
 EXPOSE 8000
 
 CMD ["/opt/startup/startup.sh"]
+
+# After installing Python packages
+RUN . /opt/venv/bin/activate && \
+    # Link system GObject packages to virtual environment
+    cp -r /usr/lib/python3/dist-packages/gi /opt/venv/lib/python3.11/site-packages/ && \
+    cp -r /usr/lib/python3/dist-packages/cairo /opt/venv/lib/python3.11/site-packages/ && \
+    # Verify GObject installation in virtual environment
+    python3 -c "import gi; from gi.repository import GObject; print('GObject version:', GObject.pygobject_version)" && \
+    # Update ldconfig to include all necessary paths
+    ldconfig
