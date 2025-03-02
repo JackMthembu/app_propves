@@ -52,6 +52,11 @@ RUN apt-get update && apt-get install -y \
     python3-gi \
     python3-gi-cairo \
     python3-cffi \
+    # Additional WeasyPrint dependencies
+    libpango1.0-0 \
+    libharfbuzz0b \
+    libpangoft2-1.0-0 \
+    libgdk-pixbuf2.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
@@ -59,10 +64,10 @@ RUN apt-get update && apt-get install -y \
     && pkg-config --print-requires gobject-2.0 \
     && pkg-config --print-requires glib-2.0
 
-# Create necessary directories
+# Create necessary directories and set permissions
 RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
     /usr/share/fonts/truetype/custom && \
-    chmod 777 /var/cache/fontconfig
+    chmod -R 777 /var/cache/fontconfig /usr/share/fonts
 
 # Update font cache
 RUN fc-cache -f -v
@@ -81,11 +86,10 @@ RUN python3.11 -m venv /opt/venv --system-site-packages && \
     # Debug output
     echo "Python packages installed:" && \
     pip list && \
-    echo "GObject packages:" && \
-    ls -l /usr/lib/python3/dist-packages/gi && \
-    echo "Testing imports..." && \
-    python3 -c "import gi; print('gi imported successfully')" && \
-    python3 -c "import gi; gi.require_version('Pango', '1.0'); from gi.repository import Pango; print('Pango version:', Pango.version_string())" && \
+    echo "Testing WeasyPrint..." && \
+    python3 -c "from weasyprint import HTML; print('WeasyPrint imported successfully')" && \
+    python3 -c "from weasyprint import HTML; HTML(string='<h1>Test</h1>').write_pdf('/tmp/test.pdf')" && \
+    echo "WeasyPrint test successful" && \
     # Create non-root user and set permissions
     useradd -m myuser && \
     chown -R myuser:myuser /app && \
