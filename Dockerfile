@@ -57,6 +57,12 @@ RUN apt-get update && apt-get install -y \
     libharfbuzz0b \
     libpangoft2-1.0-0 \
     libgdk-pixbuf2.0-0 \
+    # Additional runtime dependencies
+    libpango-1.0-0 \
+    libcairo2 \
+    # Debug tools
+    strace \
+    lsof \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
@@ -104,36 +110,33 @@ RUN python3.11 -m venv /opt/venv --system-site-packages && \
 COPY . .
 
 # Create startup script with debug logging
-RUN echo '#!/bin/sh\n\
-APP_PATH=${APP_PATH:-/home/site/wwwroot}\n\
-mkdir -p $APP_PATH/uploads/temp $APP_PATH/uploads/profile $APP_PATH/uploads/property $APP_PATH/uploads/documents\n\
-cd $APP_PATH\n\
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "Starting application setup..."\n\
+cd /home/site/wwwroot\n\
+\n\
+# Create required directories\n\
+mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
+\n\
+# Set environment variables\n\
+export FLASK_APP=app.py\n\
+export PYTHONPATH=/home/site/wwwroot:/opt/venv/lib/python3.11/site-packages:/usr/lib/python3/dist-packages\n\
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:$LD_LIBRARY_PATH\n\
 \n\
 # Debug information\n\
-echo "Python version:"\n\
-python3 --version\n\
 echo "Environment:"\n\
 env | sort\n\
+echo "Python packages:"\n\
+pip list\n\
 echo "Library paths:"\n\
-ldconfig -p | grep gobject\n\
-echo "GI repository:"\n\
-ls -l /usr/lib/x86_64-linux-gnu/girepository-1.0/\n\
+ldconfig -p | grep -E "gobject|pango|cairo"\n\
 \n\
-# Test GObject imports\n\
-python3 -c "import gi; print('\''GObject imported successfully'\'')" || { echo "Failed to import GObject"; exit 1; }\n\
-python3 -c "import gi; gi.require_version('\''Pango'\'', '\''1.0'\''); from gi.repository import Pango; print('\''Pango imported successfully'\'')" || { echo "Failed to import Pango"; exit 1; }\n\
-\n\
-# Test WeasyPrint\n\
-echo "Testing WeasyPrint installation..."\n\
-python3 -c "from weasyprint import HTML; print('\''WeasyPrint imported successfully'\'')" || { echo "Failed to import WeasyPrint"; exit 1; }\n\
-python3 -c "from weasyprint import HTML; HTML(string='\''<h1>Test</h1>'\'').write_pdf('\''/tmp/test.pdf'\'')" || { echo "Failed to generate PDF"; exit 1; }\n\
-echo "WeasyPrint test successful"\n\
-\n\
-# Start application\n\
+echo "Starting Gunicorn server..."\n\
 exec gunicorn --bind=0.0.0.0:8000 \
-    --timeout 600 \
-    --workers 1 \
-    --threads 1 \
+    --timeout 120 \
+    --workers 2 \
+    --threads 2 \
     --access-logfile - \
     --error-logfile - \
     --log-level debug \
