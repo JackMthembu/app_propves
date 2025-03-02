@@ -33,7 +33,7 @@ from messaging import messaging_bp
 from celery.schedules import crontab  
 from tenant import tenant_routes
 from openai import classify_transaction_with_azure
-from weasyprint.text.fonts import FontConfiguration
+import pdfkit
 
 app = Flask(__name__)  
 app.secret_key = os.getenv('SECRET_KEY') 
@@ -289,24 +289,32 @@ def create_app():
         if hasattr(g, 'session'):
             g.session.close()
 
-    @app.route('/health', methods=['GET'])
-    def health_check():
-        return "Healthy", 200
-
     @app.route('/health')
     def health():
         try:
-            # Test WeasyPrint configuration
-            font_config = FontConfiguration()
+            # Test pdfkit configuration with wkhtmltopdf
+            config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+            pdfkit.from_string(
+                '<h1>PDFKit is working!</h1>', 
+                'test.pdf',
+                configuration=config
+            )
             return jsonify({
                 "status": "healthy",
-                "message": "WeasyPrint configuration successful"
+                "message": "pdfkit configuration successful"
             }), 200
         except Exception as e:
             return jsonify({
                 "status": "unhealthy",
                 "error": str(e)
             }), 500
+
+    # Example route to generate PDF
+    @app.route('/generate_pdf', methods=['POST'])
+    def generate_pdf():
+        html_content = '<h1>Welcome to the PDF Generation</h1>'
+        pdfkit.from_string(html_content, 'welcome.pdf')
+        return jsonify({"message": "PDF generated successfully", "filename": 'welcome.pdf'}), 200
 
     return app 
     
@@ -328,4 +336,5 @@ def update_expired_agreements():
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(host='0.0.0.0', port=8000)
+    port = int(os.environ.get('PORT', 8000))
+    app.run(host='0.0.0.0', port=port)

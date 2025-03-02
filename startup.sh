@@ -27,7 +27,7 @@ ls -l /usr/lib/x86_64-linux-gnu/girepository-1.0/
 echo "Testing imports..."
 python3 -c "import gi; print('gi imported successfully')" || echo "Failed to import gi"
 python3 -c "import cairo; print('cairo imported successfully')" || echo "Failed to import cairo"
-python3 -c "from weasyprint.text.fonts import FontConfiguration; print('FontConfiguration imported successfully')" || echo "Failed to import FontConfiguration"
+python3 -c "import pdfkit; print('pdfkit imported successfully')" || echo "Failed to import pdfkit"
 
 echo "Starting Gunicorn server..."
 exec gunicorn --bind=0.0.0.0:8000 \

@@ -5,7 +5,7 @@ from models import Listing, Message, RentalAgreement, Enquiry, Property, Owner, 
 from extensions import db, mail
 from datetime import datetime, timedelta
 from flask_mail import Message
-from weasyprint import HTML
+import pdfkit
 import os
 from PyPDF2 import PdfReader
 import uuid
@@ -299,7 +299,7 @@ def view_rental_agreement_pdf(agreement_id):
 
     # Create a PDF from the rendered HTML
     pdf_file_path = f'temp_rental_agreement_{agreement_id}.pdf'
-    HTML(string=rendered).write_pdf(pdf_file_path)
+    pdfkit.from_string(rendered, pdf_file_path)
 
     # Return the PDF file for preview
     response = send_file(pdf_file_path, as_attachment=False, mimetype='application/pdf')
@@ -330,7 +330,7 @@ def download_rental_agreement(agreement_id):
     rendered = render_template('rental/rental_agreement_pdf.html', agreement=agreement, owner=owner, apartment=apartment)
 
     # Create a PDF from the rendered HTML
-    pdf = HTML(string=rendered).write_pdf()
+    pdf = pdfkit.from_string(rendered, False)
 
     # Create a response with the PDF
     response = make_response(pdf)
@@ -405,7 +405,7 @@ def finalize_agreement(agreement_id):
     if agreement.status == 'signed_by_owner':
         # Generate the final signed PDF
         rendered = render_template('rental/rental_agreement_pdf.html', agreement=agreement)
-        final_pdf = HTML(string=rendered).write_pdf()
+        final_pdf = pdfkit.from_string(rendered, False)
 
         # Save the final signed PDF
         final_pdf_path = f'final_signed_agreement_{agreement_id}.pdf'
@@ -443,4 +443,8 @@ def manage_agreements():
     db.session.commit()
 
     return render_template('rental/manage_agreements.html', agreements=agreements)
+
+def generate_pdf():
+    html_content = '<h1>Rental Agreement</h1><p>This is your rental agreement.</p>'
+    pdfkit.from_string(html_content, 'rental_agreement.pdf')
 

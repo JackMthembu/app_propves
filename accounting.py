@@ -14,7 +14,7 @@ from sqlalchemy import func
 from werkzeug.utils import secure_filename
 import csv
 import io
-from weasyprint import HTML
+import pdfkit
 from sqlalchemy.orm import joinedload
 from utils import allowed_file
 from transaction import transactions
@@ -635,7 +635,7 @@ def download_income_statement_pdf():
                                currency_symbol=currency_symbol)  # Pass the currency symbol
 
     # Create PDF from HTML
-    pdf = HTML(string=rendered).write_pdf()
+    pdf = pdfkit.from_string(rendered, 'income_statement.pdf')
 
     # Send the PDF as a response
     response = make_response(pdf)
@@ -713,7 +713,7 @@ def download_balance_sheet_pdf():
                                currency_symbol=currency_symbol)
 
     # Create PDF from HTML
-    pdf = HTML(string=rendered).write_pdf()
+    pdf = pdfkit.from_string(rendered, 'balance_sheet.pdf')
 
     # Create a response with the PDF
     response = make_response(pdf)
@@ -757,7 +757,6 @@ def download_balance_sheet_csv():
     for account in ACCOUNT_CLASSIFICATIONS['Assets']['Current Assets']:
         amount = sum(t.amount for t in transactions if t.account == account)
         writer.writerow([account, format_currency(amount, current_user.currency.symbol)])
-    writer.writerow(['Total Current Assets', balance_sheet_data['current_assets']])
 
     writer.writerow(['Non-Current Assets', ''])
     for account in ACCOUNT_CLASSIFICATIONS['Assets']['Non-Current Assets']:

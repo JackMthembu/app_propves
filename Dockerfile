@@ -52,7 +52,7 @@ RUN apt-get update && apt-get install -y \
     python3-gi \
     python3-gi-cairo \
     python3-cffi \
-    # WeasyPrint core dependencies
+    # pdfkit core dependencies
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
     libpangocairo-1.0-0 \
@@ -64,6 +64,9 @@ RUN apt-get update && apt-get install -y \
     # Debug tools
     strace \
     lsof \
+    # wkhtmltopdf and dependencies
+    wkhtmltopdf \
+    xvfb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
@@ -94,10 +97,10 @@ RUN python3.11 -m venv /opt/venv --system-site-packages && \
     # Debug output
     echo "Python packages installed:" && \
     pip list && \
-    echo "Testing WeasyPrint..." && \
-    python3 -c "from weasyprint import HTML; print('WeasyPrint imported successfully')" && \
-    python3 -c "from weasyprint import HTML; HTML(string='<h1>Test</h1>').write_pdf('/tmp/test.pdf')" && \
-    echo "WeasyPrint test successful" && \
+    echo "Testing pdfkit..." && \
+    python3 -c "from pdfkit import HTML; print('pdfkit imported successfully')" && \
+    python3 -c "from pdfkit import HTML; HTML(string='<h1>Test</h1>').write_pdf('/tmp/test.pdf')" && \
+    echo "pdfkit test successful" && \
     # Create non-root user and set permissions
     useradd -m myuser && \
     chown -R myuser:myuser /app && \
@@ -140,7 +143,7 @@ ls -l /usr/lib/x86_64-linux-gnu/girepository-1.0/\n\
 echo "Testing imports..."\n\
 python3 -c "import gi; print('\''gi imported successfully'\'')" || echo "Failed to import gi"\n\
 python3 -c "import cairo; print('\''cairo imported successfully'\'')" || echo "Failed to import cairo"\n\
-python3 -c "from weasyprint.text.fonts import FontConfiguration; print('\''FontConfiguration imported successfully'\'')" || echo "Failed to import FontConfiguration"\n\
+python3 -c "import pdfkit; print('pdfkit imported successfully')" || echo "Failed to import pdfkit"\n\
 \n\
 echo "Starting Gunicorn server..."\n\
 exec gunicorn --bind=0.0.0.0:8000 \\\n\
