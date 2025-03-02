@@ -68,7 +68,25 @@ RUN apt-get update && apt-get install -y \
     && ldconfig \
     # Verify GObject installation
     && pkg-config --print-requires gobject-2.0 \
-    && pkg-config --print-requires glib-2.0
+    && pkg-config --print-requires glib-2.0 \
+    # WeasyPrint core dependencies
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libpangocairo-1.0-0 \
+    libcairo2 \
+    libcairo2-dev \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    shared-mime-info \
+    # Font configuration
+    fontconfig \
+    fonts-liberation \
+    # Debug tools
+    strace \
+    lsof \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -f -v
 
 # Create necessary directories and set permissions
 RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
@@ -109,30 +127,38 @@ RUN python3.11 -m venv /opt/venv --system-site-packages && \
 # Copy application code after installing dependencies
 COPY . .
 
-# Create startup script with debug logging
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Starting application setup..."\n\
-cd /home/site/wwwroot\n\
-\n\
-# Create required directories\n\
-mkdir -p uploads/temp uploads/profile uploads/property uploads/documents\n\
-\n\
-# Set environment variables\n\
-export FLASK_APP=app.py\n\
-export PYTHONPATH=/home/site/wwwroot:/opt/venv/lib/python3.11/site-packages:/usr/lib/python3/dist-packages\n\
-export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:$LD_LIBRARY_PATH\n\
-\n\
-# Debug information\n\
-echo "Environment:"\n\
-env | sort\n\
-echo "Python packages:"\n\
-pip list\n\
-echo "Library paths:"\n\
-ldconfig -p | grep -E "gobject|pango|cairo"\n\
-\n\
-echo "Starting Gunicorn server..."\n\
+# Create startup script with more debugging
+RUN echo '#!/bin/bash
+set -e
+
+echo "Starting application setup..."
+cd /home/site/wwwroot
+
+# Create required directories
+mkdir -p uploads/temp uploads/profile uploads/property uploads/documents
+
+# Set environment variables
+export FLASK_APP=app.py
+export PYTHONPATH=/home/site/wwwroot:/opt/venv/lib/python3.11/site-packages:/usr/lib/python3/dist-packages
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/lib:$LD_LIBRARY_PATH
+export GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0
+export XDG_DATA_DIRS=/usr/share:/usr/local/share
+
+# Debug information
+echo "Environment:"
+env | sort
+echo "Python packages:"
+pip list
+echo "Library paths:"
+ldconfig -p | grep -E "gobject|pango|cairo"
+echo "GI repository contents:"
+ls -l /usr/lib/x86_64-linux-gnu/girepository-1.0/
+echo "Testing imports..."
+python3 -c "import gi; print('\''gi imported successfully'\'')" || echo "Failed to import gi"
+python3 -c "import cairo; print('\''cairo imported successfully'\'')" || echo "Failed to import cairo"
+python3 -c "from weasyprint.text.fonts import FontConfiguration; print('\''FontConfiguration imported successfully'\'')" || echo "Failed to import FontConfiguration"
+
+echo "Starting Gunicorn server..."
 exec gunicorn --bind=0.0.0.0:8000 \
     --timeout 120 \
     --workers 2 \
