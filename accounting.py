@@ -16,6 +16,7 @@ import csv
 import io
 import pdfkit
 from sqlalchemy.orm import joinedload
+import transaction
 from utils import allowed_file
 from transaction import transactions
 
@@ -993,15 +994,15 @@ def generate_balance_sheet_data(start_date, end_date):
     liabilities = sum(transaction.amount for transaction in transactions if transaction.main_category == 'Liabilities')
     current_liabilities = sum(transaction.amount for transaction in transactions if transaction.sub_category == 'Current Liabilities')
     non_current_liabilities = sum(transaction.amount for transaction in transactions if transaction.sub_category == 'Non-Current Liabilities')
-    accounts_payable = sum(transaction.amount for transaction in transactions if transaction.account == 'Accounts Payable') 
-    mortgage_payable = sum(transaction.amount for transaction in transactions if transaction.account == 'Mortgage Payable')
+    accounts_payable = sum(transaction.amount for t in transactions if t.account == 'Accounts Payable') 
+    mortgage_payable = sum(transaction.amount for t in transactions if t.account == 'Mortgage Payable')
 
     # Equity 
-    equity = sum(transaction.amount for transaction in transactions if transaction.main_category == 'Equity')
-    share_capital = sum(transaction.amount for transaction in transactions if transaction.account in (
+    equity = sum(transaction.amount for t in transactions if t.main_category == 'Equity')
+    share_capital = sum(t.amount for t in transactions if t.account in (
         'Contributed Capital', 'Owner/s Capital', 'Partner Contributions'
     ))
-    dividends = sum(transaction.amount for transaction in transactions if transaction.account == 'Distributions')
+    dividends = sum(t.amount for t in transactions if t.account == 'Distributions')
 
     # You'll need a function to calculate retained earnings (replace this)
     retained_earnings = calculate_retained_earnings(transactions)  
