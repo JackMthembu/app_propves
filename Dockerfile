@@ -1,5 +1,5 @@
-# Use official Python image
-FROM python:3.11-slim
+# Use Ubuntu base image
+FROM ubuntu:22.04
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -13,11 +13,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     GI_TYPELIB_PATH=/usr/lib/x86_64-linux-gnu/girepository-1.0 \
     XDG_DATA_DIRS=/usr/share:/usr/local/share:/usr/share/gnome:/usr/local/share/gnome
 
-# Install system dependencies in specific order
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3.11-venv \
+    python3-pip \
     build-essential \
     pkg-config \
-    python3-dev \
     # GObject dependencies
     libgirepository1.0-dev \
     gir1.2-gobject-2.0 \
@@ -52,6 +58,10 @@ RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
 RUN fc-cache -f -v
 
 WORKDIR /home/site/wwwroot
+
+# Create and activate virtual environment
+RUN python3.11 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements file
 COPY requirements.txt .
@@ -88,6 +98,7 @@ RUN useradd -m myuser && \
     chown -R myuser:myuser /app && \
     chown -R myuser:myuser /home/site/wwwroot && \
     chown -R myuser:myuser /opt/startup && \
+    chown -R myuser:myuser /opt/venv && \
     chown -R myuser:myuser /var/cache/fontconfig && \
     chown -R myuser:myuser /usr/share/fonts
 
