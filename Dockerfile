@@ -69,14 +69,22 @@ RUN fc-cache -f -v
 
 WORKDIR /home/site/wwwroot
 
-# Create and activate virtual environment
+# Copy requirements first
+COPY requirements.txt .
+
+# Create virtual environment and install packages
 RUN python3.11 -m venv /opt/venv --system-site-packages && \
-    # Set up environment
     . /opt/venv/bin/activate && \
     # Install Python packages
     pip install --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt gunicorn && \
-    # Verify GObject installation
+    # Debug output
+    echo "Python packages installed:" && \
+    pip list && \
+    echo "GObject packages:" && \
+    ls -l /usr/lib/python3/dist-packages/gi && \
+    echo "Testing imports..." && \
+    python3 -c "import gi; print('gi imported successfully')" && \
     python3 -c "import gi; gi.require_version('Pango', '1.0'); from gi.repository import Pango; print('Pango version:', Pango.version_string())" && \
     # Create non-root user and set permissions
     useradd -m myuser && \
@@ -88,7 +96,7 @@ RUN python3.11 -m venv /opt/venv --system-site-packages && \
     chown -R myuser:myuser /usr/share/fonts && \
     chmod -R 755 /opt/venv/lib/python3.11/site-packages
 
-# Copy application code
+# Copy application code after installing dependencies
 COPY . .
 
 # Create startup script with debug logging
