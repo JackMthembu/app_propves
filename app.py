@@ -33,6 +33,7 @@ from messaging import messaging_bp
 from celery.schedules import crontab  
 from tenant import tenant_routes
 from openai import classify_transaction_with_azure
+from weasyprint.text.fonts import FontConfiguration
 
 app = Flask(__name__)  
 app.secret_key = os.getenv('SECRET_KEY') 
@@ -291,6 +292,21 @@ def create_app():
     @app.route('/health', methods=['GET'])
     def health_check():
         return "Healthy", 200
+
+    @app.route('/health')
+    def health():
+        try:
+            # Test WeasyPrint configuration
+            font_config = FontConfiguration()
+            return jsonify({
+                "status": "healthy",
+                "message": "WeasyPrint configuration successful"
+            }), 200
+        except Exception as e:
+            return jsonify({
+                "status": "unhealthy",
+                "error": str(e)
+            }), 500
 
     return app 
     
