@@ -46,4 +46,4 @@ def get_messages(user_id):
 def inbox():
     # For demonstration, let's assume the logged-in user_id is passed via query param (or session)
     user_id = request.args.get('user_id', 1, type=int)  
-    return render_template('inbox.html', user_id=user_id)
+    return render_template('messages/inbox.html', user_id=user_id)
