@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y \
     gir1.2-gobject-2.0 \
     gir1.2-gtk-3.0 \
     libglib2.0-dev \
+    libgobject-2.0-0 \
     # Cairo and Pango dependencies
     libcairo2-dev \
     libpango1.0-dev \
