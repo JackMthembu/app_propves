@@ -52,23 +52,6 @@ RUN apt-get update && apt-get install -y \
     python3-gi \
     python3-gi-cairo \
     python3-cffi \
-    # Additional WeasyPrint dependencies
-    libpango1.0-0 \
-    libharfbuzz0b \
-    libpangoft2-1.0-0 \
-    libgdk-pixbuf2.0-0 \
-    # Additional runtime dependencies
-    libpango-1.0-0 \
-    libcairo2 \
-    # Debug tools
-    strace \
-    lsof \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* \
-    && ldconfig \
-    # Verify GObject installation
-    && pkg-config --print-requires gobject-2.0 \
-    && pkg-config --print-requires glib-2.0 \
     # WeasyPrint core dependencies
     libpango-1.0-0 \
     libpangoft2-1.0-0 \
@@ -78,14 +61,15 @@ RUN apt-get update && apt-get install -y \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
     shared-mime-info \
-    # Font configuration
-    fontconfig \
-    fonts-liberation \
     # Debug tools
     strace \
     lsof \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
+    && ldconfig \
+    # Verify GObject installation
+    && pkg-config --print-requires gobject-2.0 \
+    && pkg-config --print-requires glib-2.0 \
     && fc-cache -f -v
 
 # Create necessary directories and set permissions
