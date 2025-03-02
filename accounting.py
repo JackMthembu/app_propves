@@ -16,7 +16,6 @@ import csv
 import io
 import pdfkit
 from sqlalchemy.orm import joinedload
-import transaction
 from utils import allowed_file
 from transaction import transactions
 
@@ -1370,8 +1369,8 @@ def generate_invoice_pdf(invoice_data):
     # Generate HTML content for the invoice
     html_content = render_template('invoice.html', invoice=invoice_data)
     
-    # Configure pdfkit to use wkhtmltopdf
-    config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+    # Configure pdfkit to use wkhtmltopdf wrapper script
+    config = pdfkit.configuration(wkhtmltopdf='/usr/local/bin/wkhtmltopdf.sh')
     
     # Generate PDF from HTML
     pdfkit.from_string(

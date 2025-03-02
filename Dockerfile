@@ -67,6 +67,8 @@ RUN apt-get update && apt-get install -y \
     # wkhtmltopdf and dependencies
     wkhtmltopdf \
     xvfb \
+    xfonts-75dpi \
+    xfonts-base \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
