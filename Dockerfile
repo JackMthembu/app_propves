@@ -1,21 +1,18 @@
-# Use the official Python image from the Docker Hub
-FROM python:3.11-slim
+# Use a base image with pre-installed dependencies
+FROM ubuntu:22.04
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1 \
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000 \
     WEBSITE_HOSTNAME=localhost \
-    FLASK_APP=app.py \
-    DEBIAN_FRONTEND=noninteractive
+    FLASK_APP=app.py
 
-# Set the working directory
-WORKDIR /app
-
-# Install system dependencies and WeasyPrint dependencies
+# Install Python and required system packages
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    python3-dev \
+    python3.11 \
+    python3.11-dev \
     python3-pip \
     python3-setuptools \
     python3-wheel \
@@ -32,26 +29,25 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libxslt-dev \
     libgomp1 \
+    fonts-liberation \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create necessary directories with correct permissions
-RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig && \
+# Create necessary directories
+RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
+    /usr/share/fonts/truetype/custom && \
     chmod 777 /var/cache/fontconfig
 
-# Set up font configuration
-RUN mkdir -p /usr/share/fonts/truetype/custom && \
-    fc-cache -f -v
+# Update font cache
+RUN fc-cache -f -v
 
 WORKDIR /home/site/wwwroot
 
-# Copy the requirements file
+# Copy requirements and install Python packages
 COPY requirements.txt .
+RUN python3.11 -m pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
-
-# Copy the rest of your application code
+# Copy application code
 COPY . .
 
 # Create startup script
@@ -65,7 +61,8 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --threads 2 \
     --access-logfile - \
     --error-logfile - \
-    --log-level info \
+    --log-level debug \
+    --capture-output \
     app:app' > /opt/startup/startup.sh && \
     chmod +x /opt/startup/startup.sh && \
     ln -sf /opt/startup/startup.sh /home/site/wwwroot/startup.sh
@@ -78,8 +75,6 @@ RUN useradd -m myuser && \
 
 USER myuser
 
-# Expose the port your app runs on
 EXPOSE 8000
 
-# Command to run the application
 CMD ["/opt/startup/startup.sh"]
