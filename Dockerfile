@@ -70,6 +70,12 @@ RUN apt-get update && apt-get install -y \
     xfonts-75dpi \
     xfonts-base \
     libglib2.0-0 \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    mime-support \
+    python3-brotli \
+    libpango1.0-0 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
