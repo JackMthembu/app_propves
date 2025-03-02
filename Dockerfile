@@ -122,22 +122,7 @@ exec gunicorn --bind=0.0.0.0:8000 \
     chmod +x /opt/startup/startup.sh && \
     ln -sf /opt/startup/startup.sh /home/site/wwwroot/startup.sh
 
-# Create non-root user and set permissions
-RUN useradd -m myuser && \
-    chown -R myuser:myuser /app && \
-    chown -R myuser:myuser /home/site/wwwroot && \
-    chown -R myuser:myuser /opt/startup && \
-    chown -R myuser:myuser /opt/venv && \
-    chown -R myuser:myuser /var/cache/fontconfig && \
-    chown -R myuser:myuser /usr/share/fonts
-
-USER myuser
-
-EXPOSE 8000
-
-CMD ["/opt/startup/startup.sh"]
-
-# After installing Python packages
+# Move the final RUN command before USER myuser
 RUN . /opt/venv/bin/activate && \
     # Link system GObject packages to virtual environment
     cp -r /usr/lib/python3/dist-packages/gi /opt/venv/lib/python3.11/site-packages/ && \
@@ -145,4 +130,22 @@ RUN . /opt/venv/bin/activate && \
     # Verify GObject installation in virtual environment
     python3 -c "import gi; from gi.repository import GObject; print('GObject version:', GObject.pygobject_version)" && \
     # Update ldconfig to include all necessary paths
-    ldconfig
+    ldconfig && \
+    # Create non-root user and set permissions
+    useradd -m myuser && \
+    chown -R myuser:myuser /app && \
+    chown -R myuser:myuser /home/site/wwwroot && \
+    chown -R myuser:myuser /opt/startup && \
+    chown -R myuser:myuser /opt/venv && \
+    chown -R myuser:myuser /var/cache/fontconfig && \
+    chown -R myuser:myuser /usr/share/fonts && \
+    # Give myuser access to necessary directories
+    chmod 755 /opt/startup/startup.sh && \
+    chmod -R 755 /opt/venv/lib/python3.11/site-packages/gi && \
+    chmod -R 755 /opt/venv/lib/python3.11/site-packages/cairo
+
+USER myuser
+
+EXPOSE 8000
+
+CMD ["/opt/startup/startup.sh"]
