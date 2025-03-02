@@ -30,6 +30,8 @@ RUN apt-get update && apt-get install -y \
     gir1.2-gtk-3.0 \
     libglib2.0-dev \
     libgobject-2.0-0 \
+    gobject-introspection \
+    gir1.2-glib-2.0 \
     # Cairo and Pango dependencies
     libcairo2-dev \
     libpango1.0-dev \
@@ -48,7 +50,10 @@ RUN apt-get update && apt-get install -y \
     python3-cffi \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && ldconfig
+    && ldconfig \
+    # Verify GObject installation
+    && pkg-config --print-requires gobject-2.0 \
+    && pkg-config --print-requires glib-2.0
 
 # Create necessary directories
 RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig \
@@ -79,9 +84,28 @@ RUN echo '#!/bin/sh\n\
 APP_PATH=${APP_PATH:-/home/site/wwwroot}\n\
 mkdir -p $APP_PATH/uploads/temp $APP_PATH/uploads/profile $APP_PATH/uploads/property $APP_PATH/uploads/documents\n\
 cd $APP_PATH\n\
+\n\
+# Debug information\n\
+echo "Python version:"\n\
+python3 --version\n\
+echo "Environment:"\n\
+env | sort\n\
+echo "Library paths:"\n\
+ldconfig -p | grep gobject\n\
+echo "GI repository:"\n\
+ls -l /usr/lib/x86_64-linux-gnu/girepository-1.0/\n\
+\n\
+# Test GObject imports\n\
+python3 -c "import gi; print('\''GObject imported successfully'\'')" || { echo "Failed to import GObject"; exit 1; }\n\
+python3 -c "import gi; gi.require_version('\''Pango'\'', '\''1.0'\''); from gi.repository import Pango; print('\''Pango imported successfully'\'')" || { echo "Failed to import Pango"; exit 1; }\n\
+\n\
+# Test WeasyPrint\n\
 echo "Testing WeasyPrint installation..."\n\
-python3 -c "import gi; gi.require_version('\''Pango'\'', '\''1.0'\''); from gi.repository import Pango; import sys; from weasyprint import HTML; print('\''Python version:'\'', sys.version); print('\''WeasyPrint dependencies:'\'', HTML.__file__); HTML(string='\''<h1>Test</h1>'\'').write_pdf('\''/tmp/test.pdf'\'')" 2>/tmp/weasyprint-error.log || { echo "WeasyPrint test failed"; cat /tmp/weasyprint-error.log; exit 1; }\n\
+python3 -c "from weasyprint import HTML; print('\''WeasyPrint imported successfully'\'')" || { echo "Failed to import WeasyPrint"; exit 1; }\n\
+python3 -c "from weasyprint import HTML; HTML(string='\''<h1>Test</h1>'\'').write_pdf('\''/tmp/test.pdf'\'')" || { echo "Failed to generate PDF"; exit 1; }\n\
 echo "WeasyPrint test successful"\n\
+\n\
+# Start application\n\
 exec gunicorn --bind=0.0.0.0:8000 \
     --timeout 600 \
     --workers 1 \
