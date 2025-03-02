@@ -1364,3 +1364,18 @@ def get_property_tax():
     except requests.exceptions.RequestException as e:
         app.logger.error(f"API request failed: {e}")
         return jsonify({"error": "An error occurred while processing your request. Please try again later."}), 500
+
+def generate_invoice_pdf(invoice_data):
+    # Generate HTML content for the invoice
+    html_content = render_template('invoice.html', invoice=invoice_data)
+    
+    # Configure pdfkit to use wkhtmltopdf
+    config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
+    
+    # Generate PDF from HTML
+    pdfkit.from_string(
+        html_content,
+        'invoice.pdf',
+        configuration=config,
+        css='static/css/invoice.css'
+    )
