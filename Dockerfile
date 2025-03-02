@@ -1,4 +1,4 @@
-# Use official Python image
+# Use the official Python image from the Docker Hub
 FROM python:3.11-slim
 
 # Set environment variables
@@ -6,39 +6,52 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PORT=8000 \
     WEBSITE_HOSTNAME=localhost \
-    FLASK_APP=app.py
+    FLASK_APP=app.py \
+    DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Set the working directory
+WORKDIR /app
+
+# Install system dependencies and WeasyPrint dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     python3-dev \
-    libpq-dev \
-    gcc \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install WeasyPrint dependencies
-RUN apt-get update && apt-get install -y \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    python3-cffi \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libgdk-pixbuf2.0-0 \
-    libffi-dev \
     shared-mime-info \
+    libpango1.0-dev \
+    libharfbuzz-dev \
+    libffi-dev \
+    libgdk-pixbuf2.0-dev \
+    libxml2-dev \
+    libxslt-dev \
+    libgomp1 \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Create necessary directories
-RUN mkdir -p /home/site/wwwroot /app /opt/startup
+# Create necessary directories with correct permissions
+RUN mkdir -p /home/site/wwwroot /app /opt/startup /var/cache/fontconfig && \
+    chmod 777 /var/cache/fontconfig
+
+# Set up font configuration
+RUN mkdir -p /usr/share/fonts/truetype/custom && \
+    fc-cache -f -v
 
 WORKDIR /home/site/wwwroot
 
-# Copy requirements first to leverage Docker cache
+# Copy the requirements file
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Copy project
+# Copy the rest of your application code
 COPY . .
 
 # Create startup script
@@ -53,9 +66,8 @@ exec gunicorn --bind=0.0.0.0:8000 \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
-    app:app' > startup.sh && \
-    chmod +x startup.sh && \
-    mv startup.sh /opt/startup/startup.sh && \
+    app:app' > /opt/startup/startup.sh && \
+    chmod +x /opt/startup/startup.sh && \
     ln -sf /opt/startup/startup.sh /home/site/wwwroot/startup.sh
 
 # Create non-root user and set permissions
@@ -63,15 +75,11 @@ RUN useradd -m myuser && \
     chown -R myuser:myuser /app && \
     chown -R myuser:myuser /home/site/wwwroot && \
     chown -R myuser:myuser /opt/startup
+
 USER myuser
 
-# Expose port
+# Expose the port your app runs on
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Set the startup command
-CMD ["/home/site/wwwroot/startup.sh"]
-
+# Command to run the application
+CMD ["/opt/startup/startup.sh"]
