@@ -76,6 +76,11 @@ RUN apt-get update && apt-get install -y \
     mime-support \
     python3-brotli \
     libpango1.0-0 \
+    libcairo2-dev \
+    libpango1.0-dev \
+    python3-dev \
+    python3-cffi \
+    libffi-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && ldconfig \
