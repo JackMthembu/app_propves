@@ -72,8 +72,6 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
           enable-AzPSSession: true
-          environment: 'azurecloud'
-          federated-credential-provider: 'github'
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
