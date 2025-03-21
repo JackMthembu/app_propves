@@ -7,6 +7,8 @@ from flask_mail import Message
 from extensions import mail
 from models import db
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf import FlaskForm
+from wtforms import BooleanField
 from cachetools import TTLCache
 from markupsafe import Markup
 

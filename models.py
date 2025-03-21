@@ -60,31 +60,26 @@ class User(UserMixin, db.Model):
     suburb = db.Column(db.String(100), nullable=True)
     city = db.Column(db.String(100), nullable=True)
     state_id = db.Column(db.String(3), db.ForeignKey('state.id'), nullable=True)
-    country_id = db.Column(db.String(3), db.ForeignKey('country.id'), nullable=True)
-
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    country_id = db.Column(db.String(2), db.ForeignKey('country.id'), nullable=True)
 
     # Setting
     system = db.Column(db.String(20), default='metric')
 
     # Relationships
-    country = db.relationship('Country', backref='users')
-    state = db.relationship('State', backref='users')
+    country = db.relationship('Country', back_populates='users')
+    state = db.relationship('State', back_populates='users')
     owner = db.relationship('Owner', back_populates='user', uselist=False)
-    # tenant = db.relationship('Tenant', back_populates='user', uselist=False)
     managers = db.relationship('Manager', back_populates='user')
     subscription = db.relationship('Subscription', back_populates='user', uselist=False)
     currency = db.relationship('Currency', foreign_keys=[currency_id])
-    sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender')
-    received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', backref='recipient')
+    sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', back_populates='sender')
+    received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', back_populates='recipient')
     company = db.relationship('Company', back_populates='users')
     banking_details = db.relationship('BankingDetails', back_populates='user', uselist=False)
     maintainance_reports = db.relationship('MaintainanceReport', back_populates='user')
     maintainance_updates = db.relationship('MaintainanceUpdates', back_populates='user')
-
-
-    # New relationship for wishlist
-    wishlists = db.relationship('Wishlist', backref='user', lazy=True)
+    wishlists = db.relationship('Wishlist', back_populates='user', lazy=True)
+    calendar_entries = db.relationship('Calendar', back_populates='user')
 
     # User cache with 5-minute TTL
     _cache = TTLCache(maxsize=100, ttl=300)
@@ -317,7 +312,7 @@ class RentalAgreement(db.Model):
     deposit = db.Column(db.Numeric(10, 2), nullable=True)
     monthly_rental = db.Column(db.Numeric(10, 2), nullable=True)
     daily_compounding = db.Column(db.Numeric(10, 2), default=0.0)
-    admin_fee  = db.Column(db.Numeric(10, 2), default=0.0)
+    admin_fee = db.Column(db.Numeric(10, 2), default=0.0)
     
     # Inclusions
     water_sewer = db.Column(db.Boolean, default=True)
@@ -327,11 +322,11 @@ class RentalAgreement(db.Model):
     internet = db.Column(db.Boolean, default=True)
 
     # Pets and Sub-letting
-    pets_allowed = db.Column(db.Boolean, default=False)  # Field to indicate if pets are allowed
-    sub_letting_allowed = db.Column(db.Boolean, default=False)  # Field to indicate if sub-letting is allowed
+    pets_allowed = db.Column(db.Boolean, default=False)
+    sub_letting_allowed = db.Column(db.Boolean, default=False)
     max_occupants = db.Column(db.Integer, nullable=True)
     nightly_guest_rate = db.Column(db.Numeric(10, 2), nullable=True)
-    create_as_company = db.Column(db.Boolean, default=False) # if true, the lease will be created as a company lease    
+    create_as_company = db.Column(db.Boolean, default=False)
 
     # Users
     owner_id = db.Column(db.Integer, db.ForeignKey('owner.id'), nullable=True)
@@ -340,9 +335,6 @@ class RentalAgreement(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
     
     additional_terms = db.Column(db.Text, nullable=True)
-
-    # Company
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
 
     # Relationships
     property = db.relationship('Property', back_populates='rental_agreements')
@@ -532,6 +524,7 @@ class Country(db.Model):
 
     states = db.relationship("State", back_populates="country", cascade="all, delete-orphan")
     currency = db.relationship('Currency', backref='countries')
+    users = db.relationship('User', back_populates='country')
 
     def __repr__(self):
         return f"<Country(id={self.id}, country={self.country})>"
@@ -544,6 +537,7 @@ class State(db.Model):
     country_id = db.Column(db.String(2), db.ForeignKey('country.id'))
 
     country = db.relationship("Country", back_populates="states")
+    users = db.relationship('User', back_populates='state')
 
     def __repr__(self):
         return f"<State(id={self.id}, state={self.state}, country_id={self.country_id})>"
@@ -570,8 +564,13 @@ class Wishlist(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     
-    # Remove the ARRAY field entirely
+    # Add the relationship with User
+    user = db.relationship('User', back_populates='wishlists')
+    # Keep the existing relationship
     listings = db.relationship('WishlistItem', backref='wishlist', lazy=True)
+
+    def __repr__(self):
+        return f'<Wishlist {self.id} for User {self.user_id}>'
 
 class WishlistItem(db.Model):
     __tablename__ = 'wishlist_items'
@@ -644,15 +643,10 @@ class Property(db.Model):
     currency = db.relationship('Currency', backref='properties')
     owner = db.relationship('Owner', back_populates='properties')
     rental_agreements = db.relationship('RentalAgreement', back_populates='property')
-    photos = db.relationship('Photo', 
-                           back_populates='property',
-                           cascade="all, delete-orphan")
+    photos = db.relationship('Photo', back_populates='property', cascade="all, delete-orphan")
     listings = db.relationship('Listing', back_populates='property')
-    budget = db.relationship('Budget', 
-                           back_populates='property',
-                           uselist=False, 
-                           cascade="all, delete-orphan",
-                           foreign_keys=[Budget.property_id])
+    budget = db.relationship('Budget', back_populates='property', uselist=False, cascade="all, delete-orphan", foreign_keys=[Budget.property_id])
+    calendar_entries = db.relationship('Calendar', back_populates='property')
 
     def __repr__(self):
         return f'<Property {self.id} owner_id={self.owner_id}>'
@@ -752,6 +746,10 @@ class Message(db.Model):
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     is_read = db.Column(db.Boolean, default=False)
+
+    # Add the relationships to match User model
+    sender = db.relationship('User', foreign_keys=[sender_id], back_populates='sent_messages')
+    recipient = db.relationship('User', foreign_keys=[recipient_id], back_populates='received_messages')
 
     def __repr__(self):
         return f'<Message {self.id} from {self.sender_id} to {self.recipient_id}>'
@@ -879,3 +877,23 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f'<Payment {self.id} - {self.amount} - {self.date}>'
+
+class Calendar(db.Model):
+    __tablename__ = 'calendar'
+
+    id = db.Column(db.Integer, primary_key=True)
+    property_id = db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    calendar_api = db.Column(db.String(255), nullable=True)
+    date_start = db.Column(db.DateTime, nullable=False)
+    date_end = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # available, unavailable, booked
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Update relationships to use back_populates
+    property = db.relationship('Property', back_populates='calendar_entries')
+    user = db.relationship('User', back_populates='calendar_entries')
+
+    def __repr__(self):
+        return f'<Calendar {self.id} - {self.property.title} - {self.status}>'
