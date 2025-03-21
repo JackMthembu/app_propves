@@ -1,6 +1,6 @@
-from sklearn.ensemble import RandomForestClassifier
-import joblib
-import numpy as np
+from sklearn.ensemble import RandomForestClassifier # type: ignore
+import joblib # type: ignore
+import numpy as np # type: ignore
 
 # Create a simple initial model
 clf = RandomForestClassifier(n_estimators=100, random_state=42)

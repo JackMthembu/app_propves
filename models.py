@@ -62,29 +62,23 @@ class User(UserMixin, db.Model):
     state_id = db.Column(db.String(3), db.ForeignKey('state.id'), nullable=True)
     country_id = db.Column(db.String(3), db.ForeignKey('country.id'), nullable=True)
 
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
-
     # Setting
     system = db.Column(db.String(20), default='metric')
 
     # Relationships
-    country = db.relationship('Country', backref='users')
-    state = db.relationship('State', backref='users')
+    country = db.relationship('Country', back_populates='users')
+    state = db.relationship('State', back_populates='users')
     owner = db.relationship('Owner', back_populates='user', uselist=False)
-    # tenant = db.relationship('Tenant', back_populates='user', uselist=False)
     managers = db.relationship('Manager', back_populates='user')
     subscription = db.relationship('Subscription', back_populates='user', uselist=False)
     currency = db.relationship('Currency', foreign_keys=[currency_id])
-    sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', backref='sender')
-    received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', backref='recipient')
+    sent_messages = db.relationship('Message', foreign_keys='Message.sender_id', back_populates='sender')
+    received_messages = db.relationship('Message', foreign_keys='Message.recipient_id', back_populates='recipient')
     company = db.relationship('Company', back_populates='users')
     banking_details = db.relationship('BankingDetails', back_populates='user', uselist=False)
     maintainance_reports = db.relationship('MaintainanceReport', back_populates='user')
     maintainance_updates = db.relationship('MaintainanceUpdates', back_populates='user')
-
-
-    # New relationship for wishlist
-    wishlists = db.relationship('Wishlist', backref='user', lazy=True)
+    wishlists = db.relationship('Wishlist', back_populates='user', lazy=True)
 
     # User cache with 5-minute TTL
     _cache = TTLCache(maxsize=100, ttl=300)
@@ -317,7 +311,7 @@ class RentalAgreement(db.Model):
     deposit = db.Column(db.Numeric(10, 2), nullable=True)
     monthly_rental = db.Column(db.Numeric(10, 2), nullable=True)
     daily_compounding = db.Column(db.Numeric(10, 2), default=0.0)
-    admin_fee  = db.Column(db.Numeric(10, 2), default=0.0)
+    admin_fee = db.Column(db.Numeric(10, 2), default=0.0)
     
     # Inclusions
     water_sewer = db.Column(db.Boolean, default=True)
@@ -327,11 +321,11 @@ class RentalAgreement(db.Model):
     internet = db.Column(db.Boolean, default=True)
 
     # Pets and Sub-letting
-    pets_allowed = db.Column(db.Boolean, default=False)  # Field to indicate if pets are allowed
-    sub_letting_allowed = db.Column(db.Boolean, default=False)  # Field to indicate if sub-letting is allowed
+    pets_allowed = db.Column(db.Boolean, default=False)
+    sub_letting_allowed = db.Column(db.Boolean, default=False)
     max_occupants = db.Column(db.Integer, nullable=True)
     nightly_guest_rate = db.Column(db.Numeric(10, 2), nullable=True)
-    create_as_company = db.Column(db.Boolean, default=False) # if true, the lease will be created as a company lease    
+    create_as_company = db.Column(db.Boolean, default=False)
 
     # Users
     owner_id = db.Column(db.Integer, db.ForeignKey('owner.id'), nullable=True)
@@ -340,9 +334,6 @@ class RentalAgreement(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
     
     additional_terms = db.Column(db.Text, nullable=True)
-
-    # Company
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
 
     # Relationships
     property = db.relationship('Property', back_populates='rental_agreements')
@@ -879,3 +870,23 @@ class Payment(db.Model):
 
     def __repr__(self):
         return f'<Payment {self.id} - {self.amount} - {self.date}>'
+
+class Calendar(db.Model):
+    __tablename__ = 'calendar'
+
+    id = db.Column(db.Integer, primary_key=True)
+    property_id = db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    calendar_api = db.Column(db.String(255), nullable=True)
+    date_start = db.Column(db.DateTime, nullable=False)
+    date_end = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=False)  # available, unavailable, booked
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    property = db.relationship('Property', back_populates='calendar_entries')
+    user = db.relationship('User', back_populates='calendar_entries')
+
+    def __repr__(self):
+        return f'<Calendar {self.id} - {self.property.title} - {self.status}>'
